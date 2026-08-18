@@ -172,3 +172,33 @@ def get_gemini_client():
     return output_file
 st.sidebar.markdown("---")
 st.sidebar.write("Output:", str(OUT))
+st.header("🎥 Tạo video AI")
+
+if "project" in st.session_state:
+
+    if st.button("🚀 TẠO VIDEO AI", type="primary"):
+
+        project = st.session_state.project
+
+        for scene in project["scenes"]:
+
+            st.subheader(
+                f"🎬 Cảnh {scene['id']} — {scene['title']}"
+            )
+
+            try:
+
+                video_path = generate_video(
+                    scene["video_prompt"],
+                    f"scene_{scene['id']:02}.mp4"
+                )
+
+                st.video(str(video_path))
+
+            except Exception as e:
+
+                st.error(
+                    f"Lỗi cảnh {scene['id']}: {e}"
+                )
+
+
