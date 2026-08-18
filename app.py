@@ -129,5 +129,46 @@ if st.button("📦 Đóng gói"):
 st.sidebar.header("🔑 API")
 for key in ["OPENAI_API_KEY","GEMINI_API_KEY","ELEVENLABS_API_KEY"]:
     st.sidebar.write(key, "✓" if os.getenv(key) else "—")
+    import time
+from google import genai
+def get_gemini_client():
+    api_key = st.secrets.get("GEMINI_API_KEY")
+
+    if not api_key:
+        raise RuntimeError(
+            "Chưa cấu hình GEMINI_API_KEY trong Streamlit Secrets."
+        )
+
+    return genai.Client(api_key=api_key)
+    def generate_video(prompt, filename):
+    client = get_gemini_client()
+
+    operation = client.models.generate_videos(
+        model="veo-3.1-generate-preview",
+        prompt=prompt,
+    )
+
+    progress = st.progress(0)
+    status = st.empty()
+
+    while not operation.done:
+        status.info("🎬 AI đang tạo video...")
+        progress.progress(20)
+        time.sleep(10)
+        operation = client.operations.get(operation)
+
+    progress.progress(100)
+
+    video = operation.response.generated_videos[0]
+
+    output_file = OUT / "video" / filename
+
+    client.files.download(
+        file=video.video,
+        download_path=str(output_file)
+    )
+
+    status.success("✅ Đã tạo video!")
+    return output_file
 st.sidebar.markdown("---")
 st.sidebar.write("Output:", str(OUT))
