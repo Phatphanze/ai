@@ -131,6 +131,7 @@ for key in ["OPENAI_API_KEY","GEMINI_API_KEY","ELEVENLABS_API_KEY"]:
     st.sidebar.write(key, "✓" if os.getenv(key) else "—")
     import time
 from google import genai
+from google.genai import types
 def get_gemini_client():
     api_key = st.secrets.get("GEMINI_API_KEY")
 
@@ -140,39 +141,49 @@ def get_gemini_client():
         )
 
     return genai.Client(api_key=api_key)
-    def generate_video(prompt, filename):
+
+
+def generate_video(prompt, filename):
+
     client = get_gemini_client()
 
     operation = client.models.generate_videos(
         model="veo-3.1-generate-preview",
         prompt=prompt,
+        config=types.GenerateVideosConfig(
+            aspect_ratio="9:16",
+            resolution="720p",
+            number_of_videos=1
+        )
     )
 
     progress = st.progress(0)
     status = st.empty()
 
     while not operation.done:
+
         status.info("🎬 AI đang tạo video...")
-        progress.progress(20)
+
         time.sleep(10)
+
         operation = client.operations.get(operation)
 
     progress.progress(100)
 
-    video = operation.response.generated_videos[0]
+    generated_video = operation.response.generated_videos[0]
 
     output_file = OUT / "video" / filename
 
     client.files.download(
-        file=video.video,
-        download_path=str(output_file)
+        file=generated_video.video
     )
 
+    generated_video.video.save(str(output_file))
+
     status.success("✅ Đã tạo video!")
+
     return output_file
-st.sidebar.markdown("---")
-st.sidebar.write("Output:", str(OUT))
-st.header("🎥 Tạo video AI")
+    st.header("🎥 Tạo video AI")
 
 if "project" in st.session_state:
 
@@ -200,5 +211,4 @@ if "project" in st.session_state:
                 st.error(
                     f"Lỗi cảnh {scene['id']}: {e}"
                 )
-
 
